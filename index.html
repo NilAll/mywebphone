@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CloudOS - Nil All InfoTech</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        :root { --ios-bg: rgba(20, 20, 20, 0.7); }
+        
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .ios-blur { 
+            background: var(--ios-bg); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-icon-touch:active {
+            transform: scale(0.85);
+            filter: brightness(0.7);
+        }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Animação de entrada do App */
+        .app-window-enter { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body x-data="cloudOS()">
+
+    <template x-if="!isLoggedIn">
+        <div class="fixed inset-0 z-[1000] bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-[22%] mb-6 shadow-2xl flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-10 h-10 text-white font-bold"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-1 tracking-tight">CloudOS</h1>
+            <p class="text-zinc-500 mb-8 text-sm">Painel Administrativo v1.0</p>
+            
+            <div class="w-full max-w-xs space-y-3">
+                <input type="text" x-model="loginUser" placeholder="Usuário" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
+                <input type="password" x-model="loginPass" placeholder="Senha" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
+                <button @click="handleLogin" class="w-full py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-zinc-200 active:scale-95 transition-all">ACESSAR SISTEMA</button>
+            </div>
+            <p class="mt-10 text-[10px] text-zinc-600 uppercase tracking-widest">Powered by Nil All InfoTech</p>
+        </div>
+    </template>
+
+    <div class="h-full w-full relative overflow-hidden" x-show="isLoggedIn" x-cloak>
+        
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe" class="w-full h-full object-cover scale-110">
+        </div>
+
+        <header class="relative z-50 flex justify-between items-center px-8 pt-4 text-xs font-bold drop-shadow-md">
+            <span x-text="currentTime"></span>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <div class="w-5 h-2.5 border border-white/50 rounded-sm relative flex items-center px-0.5">
+                    <div class="bg-white h-1.5 w-3 rounded-sm"></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="relative z-10 grid grid-cols-4 gap-y-8 px-6 pt-12 justify-items-center max-w-md mx-auto h-[75vh] overflow-y-auto hide-scroll">
+            
+            <div @click="openApp('Mensagens', 'https://web.whatsapp.com')" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
+                <div class="w-16 h-16 bg-green-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
+                    <i data-lucide="message-circle" class="w-10 h-10 fill-white/20"></i>
+                </div>
+                <span class="text-[11px] font-medium drop-shadow-md">Mensagens</span>
+            </div>
+
+            <div @click="openApp('Arquivos', 'https://www.icloud.com/iclouddrive/')" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
+                <div class="w-16 h-16 bg-blue-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
+                    <i data-lucide="folder-open" class="w-9 h-9 fill-white/20"></i>
+                </div>
+                <span class="text-[11px] font-medium drop-shadow-md">Arquivos</span>
+            </div>
+
+            <template x-for="app in userApps" :key="app.id">
+                <div @click="openApp(app.name, app.url)" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
+                    <div class="w-16 h-16 bg-zinc-800 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
+                        <i data-lucide="layout-grid" class="w-8 h-8 text-zinc-400"></i>
+                    </div>
+                    <span class="text-[11px] font-medium drop-shadow-md" x-text="app.name"></span>
+                </div>
+            </template>
+
+            <div @click="showAddModal = true" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
+                <div class="w-16 h-16 ios-blur rounded-[22%] flex items-center justify-center shadow-xl">
+                    <i data-lucide="plus" class="w-8 h-8 text-white/70"></i>
+                </div>
+                <span class="text-[11px] font-medium drop-shadow-md">Add Link</span>
+            </div>
+        </main>
+
+        <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm h-20 ios-blur rounded-[38px] flex items-center justify-around px-4 z-40">
+            <div @click="isAdminMode = true" class="w-14 h-14 bg-amber-500/90 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
+                <i data-lucide="shield" class="w-8 h-8"></i>
+            </div>
+            <div @click="openApp('Web', 'https://www.google.com')" class="w-14 h-14 bg-white/95 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
+                <i data-lucide="globe" class="w-8 h-8 text-blue-600"></i>
+            </div>
+            <div @click="logout()" class="w-14 h-14 bg-rose-600 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
+                <i data-lucide="power" class="w-8 h-8"></i>
+            </div>
+        </footer>
+
+        <div x-show="activeApp" x-transition.opacity class="fixed inset-0 z-[100] bg-white flex flex-col app-window-enter">
+            <div class="h-14 flex items-center px-4 justify-between bg-zinc-900 border-b border-zinc-800 pt-4">
+                <button @click="closeApp" class="text-blue-400 font-semibold px-2">Fechar</button>
+                <span x-text="currentAppName" class="font-bold text-white text-sm"></span>
+                <div class="w-12"></div>
+            </div>
+            <div class="flex-1 overflow-hidden relative">
+                <iframe :src="currentAppUrl" class="w-full h-full border-none shadow-2xl"></iframe>
+            </div>
+        </div>
+
+        <div x-show="showAddModal" class="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md" x-cloak>
+            <div class="bg-zinc-900 w-full max-w-xs rounded-[30px] p-6 border border-white/10 shadow-2xl">
+                <h2 class="text-xl font-bold mb-4">Adicionar Link</h2>
+                <input type="text" x-model="newAppName" placeholder="Nome do App" class="w-full bg-zinc-800 p-3 rounded-xl mb-3 text-sm outline-none border border-transparent focus:border-blue-500">
+                <input type="url" x-model="newAppUrl" placeholder="https://url-do-site.com" class="w-full bg-zinc-800 p-3 rounded-xl mb-4 text-sm outline-none border border-transparent focus:border-blue-500">
+                <div class="flex gap-2">
+                    <button @click="showAddModal = false" class="flex-1 py-3 text-zinc-400 font-medium">Cancelar</button>
+                    <button @click="addNewApp" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold">Instalar</button>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="isAdminMode" class="fixed inset-0 z-[600] bg-zinc-950 p-6 overflow-y-auto" x-cloak x-transition>
+            <div class="flex justify-between items-center mb-10">
+                <div>
+                    <h1 class="text-2xl font-black italic">ADMIN CONSOLE</h1>
+                    <p class="text-xs text-zinc-500">Nil All InfoTech - SaaS Management</p>
+                </div>
+                <button @click="isAdminMode = false" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800">
+                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Usuários</span>
+                    <p class="text-2xl font-bold">01</p>
+                </div>
+                <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800">
+                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Status</span>
+                    <p class="text-2xl font-bold text-green-500">Online</p>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-zinc-400 mb-4 px-2">Gerenciar Clientes</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-5 bg-zinc-900 rounded-3xl border border-zinc-800">
+                    <div>
+                        <p class="font-bold">Nil All (Admin)</p>
+                        <p class="text-xs text-zinc-500">Plano Vitalício</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="p-2 bg-zinc-800 rounded-lg text-blue-400" title="Reset Senha"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        <button class="p-2 bg-zinc-800 rounded-lg text-zinc-400" title="Bloquear"><i data-lucide="lock" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cloudOS() {
+            return {
+                isLoggedIn: false,
+                loginUser: '',
+                loginPass: '',
+                currentTime: '',
+                activeApp: false,
+                currentAppName: '',
+                currentAppUrl: '',
+                showAddModal: false,
+                isAdminMode: false,
+                newAppName: '',
+                newAppUrl: '',
+                userApps: [],
+
+                init() {
+                    this.updateTime();
+                    setInterval(() => this.updateTime(), 1000);
+                    lucide.createIcons();
+                },
+
+                updateTime() {
+                    const now = new Date();
+                    this.currentTime = now.toLocaleTimeString('pt-br', { hour: '2-digit', minute: '2-digit' });
+                },
+
+                handleLogin() {
+                    // SUAS CREDENCIAIS
+                    if (this.loginUser === 'admin' && this.loginPass === 'admin1') {
+                        this.isLoggedIn = true;
+                        this.saveSession();
+                        setTimeout(() => lucide.createIcons(), 100);
+                    } else {
+                        alert("Usuário ou senha incorretos!");
+                    }
+                },
+
+                openApp(name, url) {
+                    this.currentAppName = name;
+                    this.currentAppUrl = url;
+                    this.activeApp = true;
+                    setTimeout(() => lucide.createIcons(), 50);
+                },
+
+                closeApp() {
+                    this.activeApp = false;
+                    this.currentAppUrl = '';
+                },
+
+                addNewApp() {
+                    if(this.newAppName && this.newAppUrl) {
+                        this.userApps.push({
+                            id: Date.now(),
+                            name: this.newAppName,
+                            url: this.newAppUrl
+                        });
+                        this.newAppName = '';
+                        this.newAppUrl = '';
+                        this.showAddModal = false;
+                        setTimeout(() => lucide.createIcons(), 50);
+                    }
+                },
+
+                logout() {
+                    if(confirm("Deseja desligar o sistema?")) {
+                        this.isLoggedIn = false;
+                        this.loginUser = '';
+                        this.loginPass = '';
+                    }
+                },
+
+                saveSession() {
+                    // Aqui você poderia salvar no localStorage se quiser persistência básica
+                }
+            }
+        }
+    </script>
+</body>
+</html>
