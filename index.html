@@ -11,206 +11,254 @@
 
     <style>
         [x-cloak] { display: none !important; }
-        :root { --ios-bg: rgba(20, 20, 20, 0.7); }
-        
+        :root { --ios-bg: rgba(15, 15, 15, 0.95); }
         body { 
-            background-color: #000; 
-            color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            overflow: hidden;
-            height: 100vh;
+            background-color: #000; color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none; overflow: hidden; height: 100vh;
         }
-
-        .ios-blur { 
-            background: var(--ios-bg); 
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .app-icon-touch:active {
-            transform: scale(0.85);
-            filter: brightness(0.7);
-        }
-
+        .ios-blur { background: var(--ios-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .app-window-enter { animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .hide-scroll::-webkit-scrollbar { display: none; }
-        
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: white;
-        }
-
-        /* Animação de entrada do App */
-        .app-window-enter { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
+        .glass-header { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body x-data="cloudOS()">
+<body x-data="cloudOS()" @keydown.enter="handleAuthAction()">
 
     <template x-if="!isLoggedIn">
         <div class="fixed inset-0 z-[1000] bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
-            <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-[22%] mb-6 shadow-2xl flex items-center justify-center">
-                <i data-lucide="smartphone" class="w-10 h-10 text-white font-bold"></i>
+            <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-3xl mb-6 shadow-2xl flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-10 h-10 text-white"></i>
             </div>
-            <h1 class="text-3xl font-bold mb-1 tracking-tight">CloudOS</h1>
-            <p class="text-zinc-500 mb-8 text-sm">Painel Administrativo v1.0</p>
+            <h1 class="text-3xl font-bold mb-1" x-text="authMode === 'login' ? 'CloudOS' : 'Nova Conta'"></h1>
+            <p class="text-zinc-500 mb-8 text-sm font-medium">Nil All InfoTech - Virtual Mobile</p>
             
             <div class="w-full max-w-xs space-y-3">
-                <input type="text" x-model="loginUser" placeholder="Usuário" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
-                <input type="password" x-model="loginPass" placeholder="Senha" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
-                <button @click="handleLogin" class="w-full py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-zinc-200 active:scale-95 transition-all">ACESSAR SISTEMA</button>
+                <template x-if="authMode === 'signup'">
+                    <input type="text" x-model="authField.fullName" placeholder="Nome Completo" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 outline-none text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                </template>
+                <input type="text" x-model="authField.user" placeholder="Usuário (@exemplo)" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 outline-none text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                <input type="password" x-model="authField.pass" placeholder="Senha" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 outline-none text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                <button @click="handleAuthAction" class="w-full py-4 bg-white text-black font-extrabold rounded-2xl active:scale-95 transition-all shadow-lg" x-text="authMode === 'login' ? 'ENTRAR' : 'CADASTRAR'"></button>
+                <button @click="toggleAuthMode" class="w-full py-2 text-blue-400 text-sm font-medium" x-text="authMode === 'login' ? 'Criar nova conta' : 'Já tem conta? Login'"></button>
             </div>
-            <p class="mt-10 text-[10px] text-zinc-600 uppercase tracking-widest">Powered by Nil All InfoTech</p>
         </div>
     </template>
 
     <div class="h-full w-full relative overflow-hidden" x-show="isLoggedIn" x-cloak>
-        
-        <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe" class="w-full h-full object-cover scale-110">
-        </div>
+        <div class="absolute inset-0 z-0"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe" class="w-full h-full object-cover scale-110"></div>
 
-        <header class="relative z-50 flex justify-between items-center px-8 pt-4 text-xs font-bold drop-shadow-md">
+        <header class="relative z-50 flex justify-between items-center px-8 pt-4 text-[11px] font-bold drop-shadow-md">
             <span x-text="currentTime"></span>
-            <div class="flex items-center gap-1.5">
-                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
-                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
-                <div class="w-5 h-2.5 border border-white/50 rounded-sm relative flex items-center px-0.5">
-                    <div class="bg-white h-1.5 w-3 rounded-sm"></div>
-                </div>
+            <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span x-text="'@' + currentUser" class="text-[10px] tracking-tight uppercase"></span>
             </div>
+            <div class="flex items-center gap-1.5"><i data-lucide="wifi" class="w-3.5 h-3.5 text-white"></i><i data-lucide="battery" class="w-4 h-4 text-green-400"></i></div>
         </header>
 
         <main class="relative z-10 grid grid-cols-4 gap-y-8 px-6 pt-12 justify-items-center max-w-md mx-auto h-[75vh] overflow-y-auto hide-scroll">
-            
-            <div @click="openApp('Mensagens', 'https://web.whatsapp.com')" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
-                <div class="w-16 h-16 bg-green-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
-                    <i data-lucide="message-circle" class="w-10 h-10 fill-white/20"></i>
-                </div>
+            <div @click="openChatHome()" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
+                <div class="w-16 h-16 bg-green-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10"><i data-lucide="message-circle" class="w-10 h-10 fill-white/10"></i></div>
                 <span class="text-[11px] font-medium drop-shadow-md">Mensagens</span>
             </div>
 
-            <div @click="openApp('Arquivos', 'https://www.icloud.com/iclouddrive/')" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
-                <div class="w-16 h-16 bg-blue-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
-                    <i data-lucide="folder-open" class="w-9 h-9 fill-white/20"></i>
-                </div>
-                <span class="text-[11px] font-medium drop-shadow-md">Arquivos</span>
-            </div>
-
-            <template x-for="app in userApps" :key="app.id">
-                <div @click="openApp(app.name, app.url)" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
-                    <div class="w-16 h-16 bg-zinc-800 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
-                        <i data-lucide="layout-grid" class="w-8 h-8 text-zinc-400"></i>
-                    </div>
-                    <span class="text-[11px] font-medium drop-shadow-md" x-text="app.name"></span>
+            <template x-if="currentUser === 'admin'">
+                <div @click="isAdminMode = true" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
+                    <div class="w-16 h-16 bg-amber-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10"><i data-lucide="shield-check" class="w-9 h-9"></i></div>
+                    <span class="text-[11px] font-medium drop-shadow-md text-amber-200 uppercase font-bold text-[9px]">Painel TI</span>
                 </div>
             </template>
 
-            <div @click="showAddModal = true" class="flex flex-col items-center gap-1.5 cursor-pointer app-icon-touch">
-                <div class="w-16 h-16 ios-blur rounded-[22%] flex items-center justify-center shadow-xl">
-                    <i data-lucide="plus" class="w-8 h-8 text-white/70"></i>
+            <template x-for="app in userApps" :key="app.id">
+                <div @click="openApp(app.name, app.url)" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition text-center">
+                    <div class="w-16 h-16 bg-zinc-800 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10"><i data-lucide="globe" class="w-8 h-8 text-zinc-400"></i></div>
+                    <span class="text-[11px] font-medium truncate w-16" x-text="app.name"></span>
                 </div>
+            </template>
+
+            <div @click="showAddModal = true" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
+                <div class="w-16 h-16 ios-blur rounded-[22%] flex items-center justify-center shadow-lg"><i data-lucide="plus" class="w-8 h-8"></i></div>
                 <span class="text-[11px] font-medium drop-shadow-md">Add Link</span>
             </div>
         </main>
 
-        <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm h-20 ios-blur rounded-[38px] flex items-center justify-around px-4 z-40">
-            <div @click="isAdminMode = true" class="w-14 h-14 bg-amber-500/90 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
-                <i data-lucide="shield" class="w-8 h-8"></i>
-            </div>
-            <div @click="openApp('Web', 'https://www.google.com')" class="w-14 h-14 bg-white/95 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
-                <i data-lucide="globe" class="w-8 h-8 text-blue-600"></i>
-            </div>
-            <div @click="logout()" class="w-14 h-14 bg-rose-600 rounded-[22%] flex items-center justify-center cursor-pointer shadow-lg active:scale-90 transition">
-                <i data-lucide="power" class="w-8 h-8"></i>
-            </div>
+        <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm h-20 ios-blur rounded-[38px] flex items-center justify-around px-4 z-40 border border-white/10">
+            <div @click="openApp('Google', 'https://www.google.com')" class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="search" class="w-7 h-7 text-blue-600"></i></div>
+            <div @click="logout()" class="w-14 h-14 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="power" class="w-7 h-7 text-white"></i></div>
         </footer>
 
-        <div x-show="activeApp" x-transition.opacity class="fixed inset-0 z-[100] bg-white flex flex-col app-window-enter">
-            <div class="h-14 flex items-center px-4 justify-between bg-zinc-900 border-b border-zinc-800 pt-4">
-                <button @click="closeApp" class="text-blue-400 font-semibold px-2">Fechar</button>
-                <span x-text="currentAppName" class="font-bold text-white text-sm"></span>
-                <div class="w-12"></div>
-            </div>
-            <div class="flex-1 overflow-hidden relative">
-                <iframe :src="currentAppUrl" class="w-full h-full border-none shadow-2xl"></iframe>
-            </div>
-        </div>
-
-        <div x-show="showAddModal" class="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md" x-cloak>
-            <div class="bg-zinc-900 w-full max-w-xs rounded-[30px] p-6 border border-white/10 shadow-2xl">
-                <h2 class="text-xl font-bold mb-4">Adicionar Link</h2>
-                <input type="text" x-model="newAppName" placeholder="Nome do App" class="w-full bg-zinc-800 p-3 rounded-xl mb-3 text-sm outline-none border border-transparent focus:border-blue-500">
-                <input type="url" x-model="newAppUrl" placeholder="https://url-do-site.com" class="w-full bg-zinc-800 p-3 rounded-xl mb-4 text-sm outline-none border border-transparent focus:border-blue-500">
-                <div class="flex gap-2">
-                    <button @click="showAddModal = false" class="flex-1 py-3 text-zinc-400 font-medium">Cancelar</button>
-                    <button @click="addNewApp" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold">Instalar</button>
+        <div x-show="isAdminMode" class="fixed inset-0 z-[600] bg-zinc-950 flex flex-col app-window-enter" x-cloak x-transition>
+            <div class="h-16 flex items-center justify-between glass-header px-4 pt-2">
+                <div class="flex items-center gap-2">
+                    <button @click="isAdminMode = false" class="p-2 bg-zinc-800 rounded-full"><i data-lucide="home" class="w-5 h-5"></i></button>
+                    <h1 class="text-lg font-black italic tracking-tighter">PAINEL TI</h1>
                 </div>
-            </div>
-        </div>
-
-        <div x-show="isAdminMode" class="fixed inset-0 z-[600] bg-zinc-950 p-6 overflow-y-auto" x-cloak x-transition>
-            <div class="flex justify-between items-center mb-10">
-                <div>
-                    <h1 class="text-2xl font-black italic">ADMIN CONSOLE</h1>
-                    <p class="text-xs text-zinc-500">Nil All InfoTech - SaaS Management</p>
+                <div class="text-right">
+                    <p class="text-[9px] text-zinc-500 uppercase font-bold">Root Admin</p>
+                    <p class="text-xs font-bold text-amber-500" x-text="'@' + currentUser"></p>
                 </div>
-                <button @click="isAdminMode = false" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center"><i data-lucide="x"></i></button>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800">
-                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Usuários</span>
-                    <p class="text-2xl font-bold">01</p>
-                </div>
-                <div class="bg-zinc-900 p-5 rounded-3xl border border-zinc-800">
-                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Status</span>
-                    <p class="text-2xl font-bold text-green-500">Online</p>
-                </div>
-            </div>
-
-            <h3 class="font-bold text-zinc-400 mb-4 px-2">Gerenciar Clientes</h3>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between p-5 bg-zinc-900 rounded-3xl border border-zinc-800">
-                    <div>
-                        <p class="font-bold">Nil All (Admin)</p>
-                        <p class="text-xs text-zinc-500">Plano Vitalício</p>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <template x-for="u in users" :key="u.user">
+                    <div class="bg-zinc-900/80 rounded-[30px] border border-zinc-800 p-5 flex flex-col gap-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-white text-lg" x-text="u.fullName"></h3>
+                                <p class="text-sm text-blue-400 font-medium" x-text="'@' + u.user"></p>
+                                <span :class="u.blocked ? 'text-rose-500' : 'text-green-500'" class="text-[10px] font-black uppercase mt-1 block" x-text="u.blocked ? '● BLOQUEADO' : '● ATIVO'"></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="openEditUser(u)" class="p-3 bg-zinc-800 rounded-2xl text-blue-400 active:scale-90 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                <button @click="toggleUserBlock(u.user)" x-show="u.user !== 'admin'" class="p-3 bg-zinc-800 rounded-2xl text-amber-500 active:scale-90 transition">
+                                    <i :data-lucide="u.blocked ? 'unlock' : 'lock'" class="w-4 h-4"></i>
+                                </button>
+                                <button @click="deleteUser(u.user)" x-show="u.user !== 'admin'" class="p-3 bg-zinc-800 rounded-2xl text-rose-500 active:scale-90 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button class="p-2 bg-zinc-800 rounded-lg text-blue-400" title="Reset Senha"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-                        <button class="p-2 bg-zinc-800 rounded-lg text-zinc-400" title="Bloquear"><i data-lucide="lock" class="w-4 h-4"></i></button>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="editingUser" class="fixed inset-0 z-[700] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md" x-cloak>
+            <div class="bg-zinc-900 w-full max-w-xs rounded-[40px] p-8 border border-white/10 shadow-2xl">
+                <h2 class="text-xl font-bold mb-6 text-center italic">Gerenciar Perfil</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-black ml-2 mb-1 block">Nome Completo</label>
+                        <input type="text" x-model="editFields.fullName" class="w-full bg-zinc-800 p-4 rounded-2xl text-sm outline-none border border-transparent focus:border-blue-500 text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-black ml-2 mb-1 block">Nome de Usuário (@)</label>
+                        <input type="text" x-model="editFields.user" class="w-full bg-zinc-800 p-4 rounded-2xl text-sm outline-none border border-transparent focus:border-blue-500 text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-black ml-2 mb-1 block">Redefinir Senha</label>
+                        <input type="password" x-model="editFields.pass" placeholder="Deixe em branco p/ manter" class="w-full bg-zinc-800 p-4 rounded-2xl text-sm outline-none border border-transparent focus:border-blue-500 text-white">
+                    </div>
+                    <div class="flex gap-2 pt-4">
+                        <button @click="editingUser = false" class="flex-1 py-4 text-zinc-500 font-bold">Voltar</button>
+                        <button @click="saveUserEdits" class="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg active:scale-95 transition">Salvar</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div x-show="activeChat" x-transition.opacity class="fixed inset-0 z-[200] bg-zinc-950 flex flex-col app-window-enter" x-cloak>
+            <div class="h-16 flex items-center px-4 justify-between glass-header pt-2">
+                <div class="flex items-center gap-2">
+                    <button @click="backChat()" class="p-2 bg-white/10 rounded-full"><i data-lucide="arrow-left" class="w-5 h-5 text-blue-400"></i></button>
+                    <button @click="activeChat = false; currentChatUser = null" class="p-2 bg-white/10 rounded-full"><i data-lucide="home" class="w-5 h-5 text-zinc-400"></i></button>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-tight">Cloud Messenger</p>
+                    <p class="text-xs font-black" x-text="'@' + currentUser"></p>
+                </div>
+                <div class="w-16 flex justify-end">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black" x-text="currentUser[0].toUpperCase()"></div>
+                </div>
+            </div>
+
+            <template x-if="!currentChatUser">
+                <div class="flex-1 flex flex-col overflow-hidden bg-black">
+                    <div class="p-6 pb-2"><h1 class="text-3xl font-bold italic tracking-tighter">Conversas</h1></div>
+                    <div class="p-4">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-3.5 w-4 h-4 text-zinc-500"></i>
+                            <input type="text" x-model="searchQuery" @input="searchUsers()" placeholder="Buscar nome ou @usuario..." class="w-full bg-zinc-900 p-3.5 pl-10 rounded-2xl outline-none text-sm border border-zinc-800">
+                        </div>
+                        <div x-show="searchResults.length > 0" class="mt-2 space-y-2 bg-zinc-900 p-2 rounded-2xl border border-zinc-800 shadow-2xl">
+                            <template x-for="res in searchResults">
+                                <div @click="startConversation(res.user)" class="p-3 hover:bg-zinc-800 rounded-xl flex justify-between items-center cursor-pointer transition">
+                                    <div class="flex flex-col"><span class="font-bold text-sm" x-text="res.fullName"></span><span class="text-[10px] text-zinc-500" x-text="'@' + res.user"></span></div>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-700"></i>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto px-4 hide-scroll">
+                        <p class="text-[10px] text-zinc-600 font-bold mb-4 uppercase tracking-widest px-2">Histórico Recente</p>
+                        <template x-for="chat in chatHistory" :key="chat.target">
+                            <div @click="startConversation(chat.target)" class="flex items-center gap-4 p-5 bg-zinc-900/60 rounded-[30px] mb-3 border border-zinc-900/50 active:scale-95 transition">
+                                <div class="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center font-bold text-lg text-blue-400" x-text="getUserFullName(chat.target)[0]"></div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-0.5"><span class="font-bold text-sm text-zinc-200" x-text="getUserFullName(chat.target)"></span><span class="text-[9px] text-zinc-600 uppercase font-bold">Online</span></div>
+                                    <p class="text-xs text-zinc-500 truncate w-48" x-text="chat.lastMsg"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="currentChatUser">
+                <div class="flex-1 flex flex-col bg-zinc-950 overflow-hidden">
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4 hide-scroll bg-[url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd81f75e49585ccb9.jpg')] bg-center bg-cover bg-fixed">
+                        <template x-for="m in getMessagesWith(currentChatUser)">
+                            <div :class="m.sender === currentUser ? 'ml-auto bg-blue-600 rounded-tr-none shadow-blue-900/40' : 'bg-zinc-800 rounded-tl-none'" class="p-4 rounded-[22px] max-w-[80%] text-sm shadow-lg backdrop-blur-sm">
+                                <p x-text="m.text" class="leading-relaxed"></p>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="p-4 bg-zinc-900 flex items-center gap-2 pb-10 border-t border-white/5">
+                        <input type="text" x-model="newMessage" @keydown.enter="sendPrivateMessage" placeholder="Escreva uma mensagem..." class="flex-1 bg-zinc-800 p-4 rounded-2xl text-sm outline-none text-white border-none">
+                        <button @click="sendPrivateMessage" class="bg-blue-600 p-4 rounded-2xl shadow-lg active:scale-90 transition"><i data-lucide="send" class="w-5 h-5 text-white"></i></button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div x-show="activeApp" x-transition.opacity class="fixed inset-0 z-[150] bg-white flex flex-col" x-cloak>
+            <div class="h-16 flex items-center px-4 justify-between bg-zinc-900 pt-2">
+                <div class="flex items-center gap-2">
+                    <button @click="activeApp = false" class="p-2 bg-white/10 rounded-full text-blue-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                    <button @click="activeApp = false" class="p-2 bg-white/10 rounded-full text-zinc-400"><i data-lucide="home" class="w-5 h-5"></i></button>
+                </div>
+                <div class="text-center"><span x-text="currentAppName" class="font-bold text-white text-sm"></span></div>
+                <div class="w-16"></div>
+            </div>
+            <iframe :src="currentAppUrl" class="flex-1 w-full h-full border-none shadow-2xl"></iframe>
+        </div>
+
+        <div x-show="showAddModal" class="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md" x-cloak>
+            <div class="bg-zinc-900 w-full max-w-xs rounded-[40px] p-8 border border-white/10 shadow-2xl">
+                <h2 class="text-xl font-bold mb-6 text-center italic">Instalar App</h2>
+                <input type="text" x-model="newAppName" placeholder="Nome do App" class="w-full bg-zinc-800 p-4 rounded-2xl mb-3 outline-none border border-zinc-700">
+                <input type="url" x-model="newAppUrl" placeholder="https://..." class="w-full bg-zinc-800 p-4 rounded-2xl mb-4 outline-none border border-zinc-700">
+                <div class="flex gap-2">
+                    <button @click="showAddModal = false" class="flex-1 py-4 text-zinc-500 font-bold">Voltar</button>
+                    <button @click="addNewApp" class="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-white shadow-lg active:scale-95 transition">Instalar</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         function cloudOS() {
             return {
-                isLoggedIn: false,
-                loginUser: '',
-                loginPass: '',
-                currentTime: '',
-                activeApp: false,
-                currentAppName: '',
-                currentAppUrl: '',
-                showAddModal: false,
-                isAdminMode: false,
-                newAppName: '',
-                newAppUrl: '',
+                isLoggedIn: false, currentUser: '', authMode: 'login',
+                authField: { user: '', pass: '', fullName: '' },
+                users: [{ user: 'admin', pass: 'admin1', fullName: 'Nil All Administrador', blocked: false }],
+                
+                currentTime: '', activeApp: false, currentAppName: '', currentAppUrl: '',
+                showAddModal: false, isAdminMode: false, newAppName: '', newAppUrl: '',
                 userApps: [],
+                
+                activeChat: false, searchQuery: '', searchResults: [], currentChatUser: null,
+                newMessage: '', allMessages: [], chatHistory: [],
+
+                editingUser: false, editTarget: '', editFields: { fullName: '', user: '', pass: '' },
 
                 init() {
                     this.updateTime();
                     setInterval(() => this.updateTime(), 1000);
+                    const u = localStorage.getItem('c_users'); if(u) this.users = JSON.parse(u);
+                    const apps = localStorage.getItem('c_apps'); if(apps) this.userApps = JSON.parse(apps);
+                    const msgs = localStorage.getItem('c_msgs'); if(msgs) this.allMessages = JSON.parse(msgs);
                     lucide.createIcons();
                 },
 
@@ -219,53 +267,155 @@
                     this.currentTime = now.toLocaleTimeString('pt-br', { hour: '2-digit', minute: '2-digit' });
                 },
 
-                handleLogin() {
-                    // SUAS CREDENCIAIS
-                    if (this.loginUser === 'admin' && this.loginPass === 'admin1') {
-                        this.isLoggedIn = true;
-                        this.saveSession();
-                        setTimeout(() => lucide.createIcons(), 100);
+                toggleAuthMode() { 
+                    this.authMode = this.authMode === 'login' ? 'signup' : 'login';
+                    this.authField = { user: '', pass: '', fullName: '' };
+                },
+
+                handleAuthAction() {
+                    if(!this.authField.user || !this.authField.pass) return alert("Preencha os campos!");
+                    if(this.authMode === 'login') {
+                        const found = this.users.find(u => u.user === this.authField.user && u.pass === this.authField.pass);
+                        if(found) {
+                            if(found.blocked) return alert("Acesso BLOQUEADO pelo suporte!");
+                            this.isLoggedIn = true;
+                            this.currentUser = found.user;
+                            this.rebuildChatHistory();
+                            setTimeout(() => lucide.createIcons(), 100);
+                        } else { alert("Login falhou!"); }
                     } else {
-                        alert("Usuário ou senha incorretos!");
+                        if(this.users.find(u => u.user === this.authField.user)) return alert("Username indisponível!");
+                        this.users.push({...this.authField, blocked: false});
+                        localStorage.setItem('c_users', JSON.stringify(this.users));
+                        alert("Cadastrado com sucesso!");
+                        this.authMode = 'login';
                     }
                 },
 
-                openApp(name, url) {
-                    this.currentAppName = name;
-                    this.currentAppUrl = url;
-                    this.activeApp = true;
+                // GESTÃO ADMIN - EDITAR USERNAME INTEGRADO
+                openEditUser(userObj) {
+                    this.editTarget = userObj.user; // Antigo ID
+                    this.editFields.fullName = userObj.fullName;
+                    this.editFields.user = userObj.user; // Novo username (inicialmente igual)
+                    this.editFields.pass = '';
+                    this.editingUser = true;
                     setTimeout(() => lucide.createIcons(), 50);
                 },
 
-                closeApp() {
-                    this.activeApp = false;
-                    this.currentAppUrl = '';
+                saveUserEdits() {
+                    const oldUser = this.editTarget;
+                    const newUser = this.editFields.user.trim().toLowerCase();
+                    
+                    // Valida se novo username já existe (e não é dele mesmo)
+                    if(newUser !== oldUser && this.users.find(u => u.user === newUser)) {
+                        return alert("Este Nome de Usuário já está sendo usado por outra pessoa!");
+                    }
+
+                    const idx = this.users.findIndex(u => u.user === oldUser);
+                    if(idx !== -1) {
+                        // 1. Atualiza Perfil
+                        this.users[idx].fullName = this.editFields.fullName;
+                        this.users[idx].user = newUser;
+                        if(this.editFields.pass !== '') this.users[idx].pass = this.editFields.pass;
+
+                        // 2. REFATORAR MENSAGENS (Para não perder histórico)
+                        this.allMessages.forEach(m => {
+                            if(m.sender === oldUser) m.sender = newUser;
+                            if(m.receiver === oldUser) m.receiver = newUser;
+                        });
+
+                        localStorage.setItem('c_users', JSON.stringify(this.users));
+                        localStorage.setItem('c_msgs', JSON.stringify(this.allMessages));
+
+                        // 3. Se o admin editou o próprio username, atualiza sessão
+                        if(this.currentUser === oldUser) this.currentUser = newUser;
+
+                        this.editingUser = false;
+                        this.rebuildChatHistory();
+                        alert("Usuário e Histórico de Chat atualizados!");
+                    }
                 },
 
+                toggleUserBlock(username) {
+                    const idx = this.users.findIndex(u => u.user === username);
+                    if(idx !== -1) {
+                        this.users[idx].blocked = !this.users[idx].blocked;
+                        localStorage.setItem('c_users', JSON.stringify(this.users));
+                        lucide.createIcons();
+                    }
+                },
+
+                deleteUser(username) {
+                    if(confirm("EXCLUIR PERMANENTEMENTE?")) {
+                        this.users = this.users.filter(u => u.user !== username);
+                        localStorage.setItem('c_users', JSON.stringify(this.users));
+                        lucide.createIcons();
+                    }
+                },
+
+                // CHAT E APPS
+                backChat() {
+                    if (this.currentChatUser) { this.currentChatUser = null; this.rebuildChatHistory(); } 
+                    else { this.activeChat = false; }
+                    setTimeout(() => lucide.createIcons(), 50);
+                },
+
+                openChatHome() { this.activeChat = true; this.rebuildChatHistory(); setTimeout(() => lucide.createIcons(), 50); },
+
+                searchUsers() {
+                    if(!this.searchQuery) return this.searchResults = [];
+                    const q = this.searchQuery.toLowerCase();
+                    this.searchResults = this.users.filter(u => (u.user.includes(q) || u.fullName.toLowerCase().includes(q)) && u.user !== this.currentUser);
+                },
+
+                startConversation(target) { this.currentChatUser = target; this.searchQuery = ''; this.searchResults = []; setTimeout(() => lucide.createIcons(), 50); },
+
+                getUserFullName(username) {
+                    const u = this.users.find(u => u.user === username);
+                    return u ? u.fullName : username;
+                },
+
+                getMessagesWith(target) {
+                    return this.allMessages.filter(m => (m.sender === this.currentUser && m.receiver === target) || (m.sender === target && m.receiver === this.currentUser));
+                },
+
+                sendPrivateMessage() {
+                    if(!this.newMessage.trim()) return;
+                    this.allMessages.push({ sender: this.currentUser, receiver: this.currentChatUser, text: this.newMessage, date: new Date() });
+                    localStorage.setItem('c_msgs', JSON.stringify(this.allMessages));
+                    this.newMessage = '';
+                    this.rebuildChatHistory();
+                },
+
+                rebuildChatHistory() {
+                    const uniqueTargets = new Set();
+                    const history = [];
+                    const myMsgs = this.allMessages.filter(m => m.sender === this.currentUser || m.receiver === this.currentUser).reverse();
+                    myMsgs.forEach(m => {
+                        const target = m.sender === this.currentUser ? m.receiver : m.sender;
+                        if(!uniqueTargets.has(target)) {
+                            uniqueTargets.add(target);
+                            history.push({ target: target, lastMsg: m.text });
+                        }
+                    });
+                    this.chatHistory = history;
+                },
+
+                openApp(name, url) { this.currentAppName = name; this.currentAppUrl = url; this.activeApp = true; setTimeout(() => lucide.createIcons(), 50); },
+                
                 addNewApp() {
                     if(this.newAppName && this.newAppUrl) {
-                        this.userApps.push({
-                            id: Date.now(),
-                            name: this.newAppName,
-                            url: this.newAppUrl
-                        });
-                        this.newAppName = '';
-                        this.newAppUrl = '';
-                        this.showAddModal = false;
+                        this.userApps.push({ id: Date.now(), name: this.newAppName, url: this.newAppUrl });
+                        localStorage.setItem('c_apps', JSON.stringify(this.userApps));
+                        this.newAppName = ''; this.newAppUrl = ''; this.showAddModal = false;
                         setTimeout(() => lucide.createIcons(), 50);
                     }
                 },
 
                 logout() {
-                    if(confirm("Deseja desligar o sistema?")) {
-                        this.isLoggedIn = false;
-                        this.loginUser = '';
-                        this.loginPass = '';
+                    if(confirm("Encerrar CloudOS?")) {
+                        this.isLoggedIn = false; this.currentUser = ''; this.activeChat = false; this.currentChatUser = null; this.isAdminMode = false;
                     }
-                },
-
-                saveSession() {
-                    // Aqui você poderia salvar no localStorage se quiser persistência básica
                 }
             }
         }
