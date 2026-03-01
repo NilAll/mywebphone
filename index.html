@@ -4,71 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CloudOS - Nil All InfoTech</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <style>
         [x-cloak] { display: none !important; }
-        body { background-color: #000; color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; overflow: hidden; margin: 0; }
-        .ios-blur { background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .wallpaper { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Reset de Engenharia de TI para evitar cortes */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #000; overflow: hidden; position: fixed;
+        }
+
+        .phone-screen {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .wallpaper {
+            position: absolute; inset: 0; z-index: 0;
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .ios-blur { 
+            background: rgba(15, 15, 15, 0.85); 
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); 
+            border-top: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+
+        .safe-top { padding-top: env(safe-area-inset-top, 20px); }
     </style>
 </head>
-<body x-data="cloudOS()" x-init="init()" class="flex flex-col h-full w-full">
+<body x-data="cloudOS()" x-init="init()" class="text-white font-sans">
 
-    <div x-show="!isLoggedIn" class="fixed inset-0 z-[1000] bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
+    <div x-show="!isLoggedIn" class="fixed inset-0 z-[1000] bg-zinc-950 flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-20 h-20 bg-blue-600 rounded-[22%] mb-6 flex items-center justify-center shadow-2xl">
+            <i data-lucide="smartphone" class="w-10 h-10"></i>
+        </div>
         <h1 class="text-3xl font-bold mb-8 italic">CloudOS</h1>
         <div class="w-full max-w-xs space-y-3">
-            <input type="email" x-model="authField.email" placeholder="E-mail" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-white outline-none">
-            <input type="password" x-model="authField.pass" placeholder="Senha" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-white outline-none">
-            <button @click="handleAuthAction" class="w-full py-4 bg-white text-black font-extrabold rounded-2xl">ENTRAR</button>
+            <input type="email" x-model="authField.email" placeholder="Seu E-mail" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 outline-none">
+            <input type="password" x-model="authField.pass" @keyup.enter="handleAuthAction" placeholder="Sua Senha" class="w-full p-4 rounded-2xl bg-zinc-900 border border-zinc-800 outline-none">
+            <button @click="handleAuthAction" class="w-full py-4 bg-white text-black font-extrabold rounded-2xl active:scale-95 transition">ENTRAR</button>
         </div>
     </div>
 
-    <div class="relative h-full w-full flex flex-col" x-show="isLoggedIn" x-cloak>
+    <div class="phone-screen" x-show="isLoggedIn" x-cloak>
         <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe" class="wallpaper">
-        
-        <header class="relative z-50 flex justify-between items-center px-6 pt-5 pb-2 text-[11px] font-bold">
+
+        <header class="relative z-50 flex justify-between items-center px-6 safe-top pb-2 text-[11px] font-bold drop-shadow-md">
             <span x-text="currentTime"></span>
-            <button @click="showInfoModal = true" class="p-1.5 bg-black/20 rounded-full border border-white/10 active:scale-90 transition">
+            <button @click="showInfoModal = true" class="p-1.5 bg-black/20 rounded-full border border-white/10">
                 <i data-lucide="info" class="w-4 h-4 text-zinc-300"></i>
             </button>
         </header>
 
-        <main class="flex-1 relative z-10 grid grid-cols-4 gap-y-8 px-6 pt-10 justify-items-center content-start overflow-y-auto">
+        <main class="flex-1 relative z-10 grid grid-cols-4 gap-y-8 px-6 pt-10 justify-items-center content-start">
             <template x-if="isAdmin">
-                <div @click="alert('Acesso ao Painel TI Liberado!')" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
+                <div @click="alert('Painel Administrativo Nil All InfoTech')" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
                     <div class="w-16 h-16 bg-amber-500 rounded-[22%] flex items-center justify-center shadow-xl border border-white/10">
                         <i data-lucide="shield-check" class="w-9 h-9"></i>
                     </div>
-                    <span class="text-[11px] font-medium drop-shadow-md text-amber-200">Painel TI</span>
+                    <span class="text-[11px] font-medium drop-shadow-md text-amber-100">Painel TI</span>
                 </div>
             </template>
+
+            <div @click="alert('Mensagens em breve')" class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-90 transition">
+                <div class="w-16 h-16 bg-green-500 rounded-[22%] flex items-center justify-center shadow-xl">
+                    <i data-lucide="message-circle" class="w-10 h-10"></i>
+                </div>
+                <span class="text-[11px] font-medium drop-shadow-md">Chat</span>
+            </div>
         </main>
-        
-        <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm h-20 ios-blur rounded-[38px] flex items-center justify-around px-4">
-            <div @click="logout()" class="w-14 h-14 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="power" class="w-7 h-7 text-white font-bold"></i></div>
+
+        <footer class="relative z-50 h-24 mb-6 flex items-center justify-center px-6">
+            <div class="w-full max-w-sm h-20 ios-blur rounded-[38px] flex items-center justify-around px-4 border border-white/10">
+                <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center"><i data-lucide="search" class="w-7 h-7 text-blue-600"></i></div>
+                <div @click="logout()" class="w-14 h-14 bg-rose-600 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition">
+                    <i data-lucide="power" class="w-7 h-7 text-white font-bold"></i>
+                </div>
+            </div>
         </footer>
 
         <div x-show="showInfoModal" @click.self="showInfoModal = false" class="fixed inset-0 z-[800] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" x-cloak>
             <div class="bg-zinc-900 w-full max-w-xs rounded-[35px] border border-white/10 shadow-2xl p-6 text-center">
-                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-xl uppercase" x-text="userEmail ? userEmail[0] : '?'"></div>
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold uppercase" x-text="userEmail ? userEmail[0] : '?'"></div>
                 <p class="font-bold text-lg" x-text="userFullName"></p>
                 <p class="text-xs text-blue-400 mb-6 font-mono" x-text="userEmail"></p>
-                
-                <div class="space-y-2 mb-6 text-left bg-black/20 p-4 rounded-2xl border border-white/5">
+                <div class="text-left bg-black/20 p-4 rounded-2xl mb-6">
                     <div class="flex justify-between text-[10px] uppercase font-bold text-zinc-500">
                         <span>Acesso</span>
-                        <span :class="isAdmin ? 'text-amber-500' : 'text-zinc-300'" x-text="isAdmin ? 'Administrador' : 'Usuário'"></span>
-                    </div>
-                    <div class="flex justify-between text-[10px] uppercase font-bold text-zinc-500">
-                        <span>Status</span>
-                        <span class="text-green-500">Conectado</span>
+                        <span :class="isAdmin ? 'text-amber-500' : 'text-zinc-300'" x-text="isAdmin ? 'ADMINISTRADOR' : 'USUÁRIO'"></span>
                     </div>
                 </div>
-
-                <button @click="showInfoModal = false" class="w-full py-3 bg-zinc-800 rounded-2xl font-bold text-sm active:bg-zinc-700 transition">Fechar</button>
+                <button @click="showInfoModal = false" class="w-full py-3 bg-zinc-800 rounded-2xl font-bold text-sm">Fechar</button>
             </div>
         </div>
     </div>
@@ -78,17 +110,20 @@
 
         function cloudOS() {
             return {
-                isLoggedIn: false, authMode: 'login', loading: false, isAdmin: false,
+                isLoggedIn: false, loading: false, isAdmin: false,
                 currentTime: '', showInfoModal: false, userEmail: '', userFullName: '', authField: { email: '', pass: '' },
 
                 async init() {
                     this.updateTime(); setInterval(() => this.updateTime(), 1000);
                     const { data: { session } } = await sb.auth.getSession();
-                    if (session && localStorage.getItem('c_last_login') === new Date().toDateString()) {
+                    const lastLogin = localStorage.getItem('c_last_login');
+                    
+                    if (session && lastLogin === new Date().toDateString()) {
                         this.isLoggedIn = true;
                         this.userEmail = session.user.email;
-                        // VERIFICA SE É ADMIN NO BANCO
-                        const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+                        
+                        // BUSCA DADOS NA TABELA PROFILES
+                        const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
                         if (profile) {
                             this.isAdmin = profile.is_admin;
                             this.userFullName = profile.full_name || 'Usuário';
